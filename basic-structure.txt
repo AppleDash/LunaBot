@@ -1,0 +1,10 @@
+This is an IRC bot (duh).
+
+It maintains a global list of objects (tuples?), (tentatively) called handlers.
+Each handler contains a string name, a numeric priority value, a regex, and a function.
+
+The mane loop works like this:
+- read a line from the server
+- for each handler in the global list:
+    - if the line matches the handler's regex:
+        - call the handler's function, passing in the line (and maybe some other things, later)
