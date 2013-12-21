@@ -28,11 +28,13 @@ class HandlerManager():
 		return self._counter
 
 	def remove_handler(self, hid):
-		for handler in self.handlers:
-			if handler.hid == hid:
-				del handler  # TODO: check this; I'm not sure it works
-				return True  # handler was removed
-		return False                 # handler not found, so not removed
+		for handler_list in self.handlers.values():
+			# TODO: make this loop Pythonic:
+			for i in range(len(handler_list) - 1):
+				if handler_list[i].hid == hid:
+					del handler_list[i]
+					return True
+		return False
 
 	def sort_handlers(self): #Need to make this reverse the list!
 		for k in self.handlers:
