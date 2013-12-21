@@ -1,13 +1,15 @@
+import re
 from operator import attrgetter
 
 class Handler():
-    def __init__(self, event, priority, callback):
+    def __init__(self, event, priority, pattern, callback):
         self.event = event
         self.priority = priority
+        self.pattern = re.compile(pattern)
         self.callback = callback
 
     def __str__(self):
-        return "Handler(event='%s', priority=%d, callback='%s')" % (self.event, self.priority, self.callback)
+        return "Handler(event=%s, priority=%d, pattern=%s callback=%s)" % (repr(self.event), self.priority, repr(self.pattern.pattern), self.callback)
 
     def __repr__(self):
         return self.__str__()
@@ -34,7 +36,7 @@ class HandlerManager():
 
     def sort_handlers(self):
         for event in self.handler_lists.keys():
-            self.handler_lists[event].sort(key=attrgetter('priority'), reverse=True)
+            self.handler_lists[event].sort(key=attrgetter("priority"), reverse=True)
 
     def print_handlers(self):
         for event in self.handler_lists.keys():
