@@ -15,20 +15,20 @@ class Handler():
 
 class HandlerManager():
 	def __init__(self):
-		self.handlers = {}
+		self.handler_lists = {}
 		self._counter = 0
 
 	def add_handler(self, handler):
 		self._counter += 1
 		handler.hid = self._counter
 		try:
-			self.handlers[handler.event].append(handler)
+			self.handler_lists[handler.event].append(handler)
 		except:
-			self.handlers[handler.event] = [handler]
+			self.handler_lists[handler.event] = [handler]
 		return self._counter
 
 	def remove_handler(self, hid):
-		for handler_list in self.handlers.values():
+		for handler_list in self.handler_lists.values():
 			# TODO: make this loop Pythonic:
 			for i in range(len(handler_list) - 1):
 				if handler_list[i].hid == hid:
@@ -36,13 +36,13 @@ class HandlerManager():
 					return True
 		return False
 
-	def sort_handlers(self): #Need to make this reverse the list!
-		for k in self.handlers:
-			self.handlers[k].sort(key=attrgetter('priority'), reverse=True)
+	def sort_handlers(self):
+		for event in self.handler_lists.keys():
+			self.handler_lists[event].sort(key=attrgetter('priority'), reverse=True)
 
-	def printhandlers(self):
-		for hid in self.handlers:
-			handler = self.handlers[hid]
-			print("%s: %s" % (hid, repr(handler)))
+	def print_handlers(self):
+		for event in self.handler_lists.keys():
+			handler_list = self.handler_lists[event]
+			print("%s: %s" % (event, repr(handler_list)))
 
 # TODO: Enum for event priorities or something?
