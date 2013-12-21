@@ -5,7 +5,6 @@ class Handler():
         self.event = event
         self.priority = priority
         self.callback = callback
-        self.hid = -1
 
     def __str__(self):
         return "Handler(event='%s', priority=%d, callback='%s')" % (self.event, self.priority, self.callback)
@@ -16,22 +15,19 @@ class Handler():
 class HandlerManager():
     def __init__(self):
         self.handler_lists = {}
-        self._counter = 0
 
     def add_handler(self, handler):
-        self._counter += 1
-        handler.hid = self._counter
         try:
             self.handler_lists[handler.event].append(handler)
         except:
             self.handler_lists[handler.event] = [handler]
-        return self._counter
+        return id(handler)
 
-    def remove_handler(self, hid):
+    def remove_handler(self, handler_id):
         for handler_list in self.handler_lists.values():
             # TODO: make this loop Pythonic:
             for i in range(len(handler_list) - 1):
-                if handler_list[i].hid == hid:
+                if id(handler_list[i]) == handler_id:
                     del handler_list[i]
                     return True
         return False
