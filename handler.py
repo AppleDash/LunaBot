@@ -25,7 +25,7 @@ class HandlerManager():
             except KeyError:
                 self.handler_lists[handler.event] = [handler]
 
-    def remove_handler(self, *handler_ids):
+    def remove_handlers(self, *handler_ids):
         for handler_list in self.handler_lists.values():
             # TODO: make this loop Pythonic:
             for i in range(len(handler_list) - 1):
