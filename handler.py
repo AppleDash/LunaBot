@@ -18,21 +18,19 @@ class HandlerManager():
     def __init__(self):
         self.handler_lists = {}
 
-    def add_handler(self, handler):
-        try:
-            self.handler_lists[handler.event].append(handler)
-        except:
-            self.handler_lists[handler.event] = [handler]
-        return id(handler)
+    def add_handlers(self, *handlers):
+        for handler in handlers:
+            try:
+                self.handler_lists[handler.event].append(handler)
+            except KeyError:
+                self.handler_lists[handler.event] = [handler]
 
-    def remove_handler(self, handler_id):
+    def remove_handler(self, *handler_ids):
         for handler_list in self.handler_lists.values():
             # TODO: make this loop Pythonic:
             for i in range(len(handler_list) - 1):
-                if id(handler_list[i]) == handler_id:
+                if id(handler_list[i]) in handler_ids:
                     del handler_list[i]
-                    return True
-        return False
 
     def sort_handlers(self):
         for event in self.handler_lists.keys():
