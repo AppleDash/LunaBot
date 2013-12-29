@@ -6,6 +6,8 @@ from os.path import dirname, isdir, normpath
 
 from lunabot.default_config import default_config
 
+config = None
+
 def main():
     arg_parser = ArgumentParser(prog="lunabot")
     arg_parser.add_argument("-c", "--config", dest="config_file_name")
@@ -15,6 +17,7 @@ def main():
     # the path you give it has `..` in it. So, just in case...
     config_file_name = normpath(args.config_file_name)
     
+    global config
     try:
         with open(config_file_name, "r") as config_file:
             config = json_load(config_file)
@@ -27,5 +30,6 @@ def main():
                 pass
             else:
                 raise
+        config = dict(default_config)
         with open(config_file_name, "w") as config_file:
-            json_dump(default_config, config_file)
+            json_dump(config, config_file)
