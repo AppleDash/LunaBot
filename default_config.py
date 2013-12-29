@@ -5,7 +5,7 @@ default_config = {
             "~/.lunabot/*.py",
             ],
         },
-    
+
     "network_defaults": {
         "port": 6697,
         "tls": True,
@@ -15,6 +15,6 @@ default_config = {
         "username": "lunabot",
         "realname": "LunaBot",
         },
-    
+
     "networks": dict(),
 }

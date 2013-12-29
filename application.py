@@ -12,11 +12,11 @@ def main():
     arg_parser = ArgumentParser(prog="lunabot")
     arg_parser.add_argument("-c", "--config", dest="config_file_name")
     args = arg_parser.parse_args()
-    
+
     # According to the docs, makedirs() gets confused if
     # the path you give it has `..` in it. So, just in case...
     config_file_name = normpath(args.config_file_name)
-    
+
     global config
     try:
         with open(config_file_name, "r") as config_file:
