@@ -1,3 +1,4 @@
+from itertools import chain
 from re import compile as re_compile
 from operator import attrgetter
 
@@ -11,20 +12,33 @@ class Handler:
         self.pattern = re_compile(pattern)
         self.callback = callback
 
-    def __str__(self):
+    def __repr__(self):
         return "Handler(event=%s, priority=%d, pattern=%s, callback=%s)" % (
             repr(self.event), self.priority,
             repr(self.pattern.pattern), self.callback,
             )
 
-    def __repr__(self):
-        return self.__str__()
+    def __str__(self):
+        return repr(self)
 
 class HandlerManager:
-    def __init__(self):
+    def __init__(self, *handlers):
         self.handler_lists = {}
+        self.add(*handlers)
 
-    def add_handlers(self, *handlers):
+    def __repr__(self):
+        return repr(list(chain(*self.handler_lists.values())))
+
+    def __str__(self):
+        return object.__repr__(self)
+
+    def __len__(self):
+        return sum([len(handler_list) for handler_list in handler_lists])
+
+    def __iter__(self):
+        return chain(*self.handler_lists.values())
+
+    def add(self, *handlers):
         changed_events = set()
         for handler in handlers:
             changed_events.add(handler.event)
@@ -35,7 +49,7 @@ class HandlerManager:
         for event in changed_events:
             self.handler_lists[event].sort(key=attrgetter("priority"))
 
-    def remove_handlers(self, *handlers):
+    def remove(self, *handlers):
         changed_events = set()
         for handler in handlers:
             changed_events.add(handler.event)
@@ -47,5 +61,8 @@ class HandlerManager:
         for event in changed_events:
             if not self.handler_lists[event]:
                 del self.handler_lists[event]
+
+    def clear(self):
+        self.handler_lists.clear()
 
 # TODO: Enum for event priorities or something?
