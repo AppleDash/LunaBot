@@ -6,6 +6,7 @@ import os.path
 
 from lunabot.default_config import default_config
 from lunabot.handler import HandlerManager
+from lunabot.connection import Connection
 
 config = None
 handlers = None
@@ -39,5 +40,7 @@ def main():
                 else:
                     raise
 
-    global handlers
-    handlers = HandlerManager()
+    for network_name in config["networks"]:
+        network = config["networks"][network_name]
+        c = Connection(network_name)
+        c.start()

@@ -12,7 +12,6 @@ from lunabot.handler import Handler, HandlerManager
 from lunabot.line import Line
 from collections import ChainMap
 
-
 class Connection(threading.Thread):
     def __init__(self, name):
         super().__init__(threading.Thread, self)
