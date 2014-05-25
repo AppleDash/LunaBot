@@ -29,7 +29,7 @@ def main():
         config = default_config.copy()
         try:
             with open(config_file_name, "x") as config_file:
-                json_dump(config, config_file)
+                json_dump(config, config_file, sort_keys=True, indent=4, separators=(',', ': '))
         except FileNotFoundError:
             try:
                 makedirs(config_dir, exist_ok=True)
