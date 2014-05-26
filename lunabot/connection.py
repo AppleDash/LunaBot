@@ -6,15 +6,17 @@ import socket
 import ssl
 import threading
 
-from lunabot.application import config, config_dir, handlers as global_handlers
+#from lunabot.application import config, config_dir, handlers as global_handlers
 from lunabot.default_config import default_config
-from lunabot.handler import Handler, HandlerManager
+from lunabot.handler import Handler, HandlerManager, UNKNOWN_PRIORITY
 from lunabot.line import Line
 from collections import ChainMap
 
+global_handlers = HandlerManager()
+
 class Connection(threading.Thread):
-    def __init__(self, name):
-        super().__init__(threading.Thread, self)
+    def __init__(self, name, config, config_dir):
+        super(Connection, self).__init__()
         self.name = name
         self.config = ChainMap(
             config["networks"][self.name],
@@ -23,6 +25,7 @@ class Connection(threading.Thread):
         )
         self.socket = None
         self.handlers = HandlerManager()
+        self.connected = False
 
     def _create_tls_context(self):
         version = config_to_ssl_constant(self.config["tls_version"])
@@ -47,7 +50,7 @@ class Connection(threading.Thread):
         tls_verify = self.config["tls_verify"]
         allowed_hostnames = self.config["tls_allowed_hostnames"]
         addr_info_list = []
-        for family in config_allowed_families:
+        for family in [socket.AF_INET]:#config_allowed_families:
             try:
                 addr_info_list.extend(socket.getaddrinfo(
                     self.config["host"], self.config["port"],
@@ -76,6 +79,7 @@ class Connection(threading.Thread):
             else:
                 self.disconnect()
                 # TODO: tell the user verification failed
+        self.connected = True
 
     def load_initial_handlers(self):
         autojoin_handlers = []
@@ -92,11 +96,14 @@ class Connection(threading.Thread):
         self.handlers.add(*autojoin_handlers)
 
         self.handlers.add(Handler("ERROR", UNKNOWN_PRIORITY, "", self.disconnect))
-        return False
+
+        #return False
 
         def pong(*args, line_str=None, **kwargs):
             self.send_raw(line_str.replace("PING", "PONG", 1))
             return False
+
+        self.handlers.add(Handler("PING", UNKNOWN_PRIORITY, "", pong))
 
     def disconnect(self):
         self.socket.shutdown(socket.RDWR)
@@ -104,19 +111,37 @@ class Connection(threading.Thread):
         self.socket = None
         self.handlers.clear()
 
+    def send_raw(self, data):
+        print("<- " + data)
+        self.socket.send(bytes(data + "\r\n", encoding="utf-8"))
+
+    def send_join(self, channels):
+        self.send_raw("JOIN %s" % channels)
+
     def read_line(self):
-        pass
+        out = ""
+        while 1:
+            c = self.socket.recv(1).decode("utf-8")
+            if c is None or c == "":
+                return None
+            if c == "\n":
+                return out.strip()
+            out += c
 
     def mane_loop(self):
         line = Line.parse(self.read_line())
+        print("-> " + line.linestr)
         handlers = sorted(
             self.handlers[line.command] + global_handlers[line.command],
             key=attrgetter("priority"))
         for handler in handlers:
-            if handler.pattern.match(line.linestr):
-                handler.callback(line=line)
+            if handler.event == line.command and handler.pattern.match(line.linestr):
+                handler.callback(line=line, line_str=line.linestr)
 
     def run(self):
         self.connect()
+        self.load_initial_handlers()
+        self.send_raw("NICK %s" % self.config["nicks"][0])
+        self.send_raw("USER %s * * %s" % (self.config["username"], self.config["realname"]))
         while self.connected:
             self.mane_loop()

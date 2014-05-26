@@ -42,5 +42,5 @@ def main():
 
     for network_name in config["networks"]:
         network = config["networks"][network_name]
-        c = Connection(network_name)
+        c = Connection(network_name, config, config_dir)
         c.start()

@@ -65,4 +65,8 @@ class HandlerManager:
     def clear(self):
         self.handler_lists.clear()
 
+    def __getitem__(self, index):
+        return [item for item in self.handler_lists.get(index, [])]
+
 # TODO: Enum for event priorities or something?
+UNKNOWN_PRIORITY = -1
