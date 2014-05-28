@@ -16,13 +16,13 @@ global_handlers = HandlerManager()
 
 class Connection(threading.Thread):
     def __init__(self, name, config, config_dir):
-        super(Connection, self).__init__()
+        super().__init__()
         self.name = name
         self.config = ChainMap(
             config["networks"][self.name],
             config["network_defaults"],
             default_config["network_defaults"],
-        )
+            )
         self.socket = None
         self.handlers = HandlerManager()
         self.connected = False
@@ -92,7 +92,7 @@ class Connection(threading.Thread):
         autojoin_handlers[:] = [
             Handler("376", UNKNOWN_PRIORITY, "", join_channels),
             Handler("422", UNKNOWN_PRIORITY, "", join_channels),
-        ]
+            ]
         self.handlers.add(*autojoin_handlers)
 
         self.handlers.add(Handler("ERROR", UNKNOWN_PRIORITY, "", self.disconnect))
