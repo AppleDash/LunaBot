@@ -25,6 +25,7 @@ class Connection(threading.Thread):
             )
         self.socket = None
         self.handlers = HandlerManager()
+        # TODO: maybe this should be a `status` attribute?
         self.connected = False
 
     def _create_tls_context(self):
@@ -50,7 +51,8 @@ class Connection(threading.Thread):
         tls_verify = self.config["tls_verify"]
         allowed_hostnames = self.config["tls_allowed_hostnames"]
         addr_info_list = []
-        for family in [socket.AF_INET]:#config_allowed_families:
+        # TODO: make IP version preference a config option
+        for family in (socket.AF_INET6, socket.AF_INET):
             try:
                 addr_info_list.extend(socket.getaddrinfo(
                     self.config["host"], self.config["port"],
@@ -112,7 +114,7 @@ class Connection(threading.Thread):
         self.handlers.clear()
 
     def send_raw(self, data):
-        print("<- " + data)
+        print("<-", data)
         self.socket.send(bytes(data + "\r\n", encoding="utf-8"))
 
     def send_join(self, channels):
@@ -130,7 +132,7 @@ class Connection(threading.Thread):
 
     def mane_loop(self):
         line = Line.parse(self.read_line())
-        print("-> " + line.linestr)
+        print("->", line.linestr)
         handlers = sorted(
             self.handlers[line.command] + global_handlers[line.command],
             key=attrgetter("priority"))
@@ -141,7 +143,9 @@ class Connection(threading.Thread):
     def run(self):
         self.connect()
         self.load_initial_handlers()
+        # TODO: what about `CAP`s?
+        # TODO: what if that nick is taken?
         self.send_raw("NICK %s" % self.config["nicks"][0])
-        self.send_raw("USER %s * * %s" % (self.config["username"], self.config["realname"]))
+        self.send_raw("USER %s * * :%s" % (self.config["username"], self.config["realname"]))
         while self.connected:
             self.mane_loop()
