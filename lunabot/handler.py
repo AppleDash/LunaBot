@@ -1,21 +1,15 @@
 from itertools import chain
-from re import compile as re_compile
 from operator import attrgetter
 
 class Handler:
-    def __init__(self, event, priority, pattern, callback):
+    def __init__(self, event, priority, callback):
         self.event = event
         self.priority = priority
-        # If you pass re.compile() a compile()d regex object, it returns it
-        # (presumably without further processing).
-        # Thus, /pattern/ may be either a string or a regex object.
-        self.pattern = re_compile(pattern)
         self.callback = callback
 
     def __repr__(self):
-        return "Handler(event=%s, priority=%d, pattern=%s, callback=%s)" % (
-            repr(self.event), self.priority,
-            repr(self.pattern.pattern), self.callback,
+        return "Handler(event=%s, priority=%d, callback=%s)" % (
+            repr(self.event), self.priority, self.callback,
             )
 
     def __str__(self):
@@ -30,10 +24,11 @@ class HandlerManager:
         return repr(list(chain(*self.handler_lists.values())))
 
     def __str__(self):
+        # Not repr(self) because we want `object`s representation.
         return object.__repr__(self)
 
     def __len__(self):
-        return sum([len(handler_list) for handler_list in handler_lists])
+        return sum(len(handler_list) for handler_list in self.handler_lists)
 
     def __iter__(self):
         return chain(*self.handler_lists.values())
@@ -65,8 +60,8 @@ class HandlerManager:
     def clear(self):
         self.handler_lists.clear()
 
-    def __getitem__(self, index):
-        return [item for item in self.handler_lists.get(index, [])]
+    def __getitem__(self, key):
+        return self.handler_lists.get(key, [])
 
 # TODO: Enum for event priorities or something?
 UNKNOWN_PRIORITY = -1

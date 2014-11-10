@@ -117,34 +117,6 @@ class Connection(threading.Thread):
                 # TODO: tell the user verification failed
         self.connected = True
 
-    # TODO: make these all plugins.
-    # Yes, even the pingpong one.
-    def load_initial_handlers(self):
-        autojoin_handlers = []
-
-        def join_channels(*args, **kwargs):
-            with self.config_lock:
-                channels = self.config["channels"]
-            self.send_join(",".join(channels))
-            self.handlers.remove(*autojoin_handlers)
-            return True
-
-        autojoin_handlers[:] = [
-            Handler("376", UNKNOWN_PRIORITY, "", join_channels),
-            Handler("422", UNKNOWN_PRIORITY, "", join_channels),
-            ]
-        self.handlers.add(*autojoin_handlers)
-
-        self.handlers.add(Handler("ERROR", UNKNOWN_PRIORITY, "", self.disconnect))
-
-        #return False
-
-        def pong(*args, line_str=None, **kwargs):
-            self.send_raw(line_str.replace("PING", "PONG", 1))
-            return False
-
-        self.handlers.add(Handler("PING", UNKNOWN_PRIORITY, "", pong))
-
     def disconnect(self):
         self.socket.shutdown(socket.RDWR)
         self.socket.close()
@@ -170,19 +142,18 @@ class Connection(threading.Thread):
 
     def mane_loop(self):
         line = Line.parse(self.read_line())
-        print("->", line.linestr)
+        print("->", str(line))
         handlers = sorted(
             self.handlers[line.command] + global_handlers[line.command],
             key=attrgetter("priority"))
         for handler in handlers:
-            if handler.event == line.command and handler.pattern.match(line.linestr):
-                handler.callback(line=line, line_str=line.linestr)
+            if handler.event == line.command:
+                handler.callback(connection=self, line=line)
 
     def run(self):
         self.connect()
-        self.load_initial_handlers()
+        # TODO: need to load all those plugins
         # TODO: what about `CAP`s?
-        # TODO: what if that nick is taken?
         with self.config_lock:
             nicks = self.config["nicks"]
             username = self.config["username"]
