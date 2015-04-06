@@ -45,17 +45,15 @@ class HandlerManager:
             self.handler_lists[event].sort(key=attrgetter("priority"))
 
     def remove(self, *handlers):
-        changed_events = set()
         for handler in handlers:
-            changed_events.add(handler.event)
             try:
                 self.handler_lists[handler.event].remove(handler)
-            except ValueError:
-                # The Handler wasn't in the list. That's perfectly fine.
+            except (KeyError, ValueError):
+                # The Handler wasn't in the list, or there were no Handlers
+                # for that event. That's perfectly fine.
                 pass
-        for event in changed_events:
-            if not self.handler_lists[event]:
-                del self.handler_lists[event]
+            if not self.handler_lists[handler.event]:
+                del self.handler_lists[handler.event]
 
     def clear(self):
         self.handler_lists.clear()
