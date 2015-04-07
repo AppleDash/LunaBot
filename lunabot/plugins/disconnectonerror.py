@@ -1,6 +1,6 @@
-from lunabot.handler import Handler, UNKNOWN_PRIORITY
+from lunabot.handler import Handler, HandlerPriority
 
 def disconnect(connection, line):
     connection.disconnect()
 
-disconnect_on_error = Handler("ERROR", UNKNOWN_PRIORITY, disconnect)
+disconnect_on_error = Handler("ERROR", HandlerPriority.normal, disconnect)

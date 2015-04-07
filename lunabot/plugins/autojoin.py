@@ -1,4 +1,4 @@
-from lunabot.handler import Handler, UNKNOWN_PRIORITY
+from lunabot.handler import Handler, HandlerPriority
 
 # TODO: we need a way to add these back on connect
 
@@ -11,6 +11,6 @@ def join_channels(connection, line):
     connection.handlers.remove(*autojoin_handlers)
 
 autojoin_handlers[:] = [
-    Handler("376", UNKNOWN_PRIORITY, join_channels),
-    Handler("422", UNKNOWN_PRIORITY, join_channels),
+    Handler("376", HandlerPriority.normal, join_channels),
+    Handler("422", HandlerPriority.normal, join_channels),
     ]

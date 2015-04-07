@@ -1,4 +1,4 @@
-from lunabot.handler import Handler, UNKNOWN_PRIORITY
+from lunabot.handler import Handler, HandlerPriority
 
 # TODO: handle 432s from when we try to set nicks that are too long
 
@@ -29,6 +29,6 @@ def unload_handlers(connection, line):
     connection.handlers.remove(*handlers)
 
 handlers[:] = [
-    Handler("433", UNKNOWN_PRIORITY, take_available_nick),
-    Handler("NICK", UNKNOWN_PRIORITY, unload_handlers),
+    Handler("433", HandlerPriority.normal, take_available_nick),
+    Handler("NICK", HandlerPriority.normal, unload_handlers),
     ]

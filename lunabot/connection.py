@@ -8,7 +8,7 @@ import ssl
 import threading
 
 import lunabot.config
-from lunabot.handler import Handler, HandlerManager, UNKNOWN_PRIORITY
+from lunabot.handler import Handler, HandlerManager
 from lunabot.line import Line
 
 global_handlers = HandlerManager()

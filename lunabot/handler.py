@@ -3,6 +3,7 @@ import collections.abc
 from functools import partial
 from operator import attrgetter
 
+from lunabot.orderedenum import OrderedEnum
 from lunabot.sortedlist import SortedList
 
 class Handler:
@@ -74,5 +75,5 @@ class HandlerManager(collections.abc.MutableSet):
         self._handlers.clear()
         self._len = 0
 
-# TODO: Enum for event priorities or something?
-UNKNOWN_PRIORITY = -1
+class HandlerPriority(OrderedEnum):
+    normal = 0
