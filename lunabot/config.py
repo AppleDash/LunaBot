@@ -1,9 +1,9 @@
 from copy import deepcopy
+import errno
 import json
+import os
 import ssl
 import threading
-
-# TODO: These should really be immutable…
 
 DEFAULT_CONFIG = {
     "global": {
@@ -32,7 +32,6 @@ DEFAULT_CONFIG = {
     }
 
 # Not just a dict literal because not all versions of Python have all these constants
-# TODO: There's got to be a better way to do these conversions.
 TLS_VERSIONS_FROM_STR = {}
 try:
     TLS_VERSIONS_FROM_STR["SSL 2"] = ssl.PROTOCOL_SSLv2
@@ -64,7 +63,10 @@ def load(filename):
     with open(filename, "r") as file:
         config = json.load(file)
     try:
-        config["network_defaults"]["tls_allowed_versions"] = [TLS_VERSIONS_FROM_STR[version] for version in config["network_defaults"]["tls_allowed_versions"]]
+        config["network_defaults"]["tls_allowed_versions"] = [
+            TLS_VERSIONS_FROM_STR[version] for version in
+            config["network_defaults"]["tls_allowed_versions"]
+            ]
     except KeyError:
         # The network defaults config doesn't have a "tls_allowed_versions" list.
         # Nothing to do here.
@@ -73,7 +75,10 @@ def load(filename):
     # we'll just get an empty dict and iterate over it.
     for network_config in config.get("networks", {}).values():
         try:
-            network_config["tls_allowed_versions"] = [TLS_VERSIONS_FROM_STR[version] for version in network_config["tls_allowed_versions"]]
+            network_config["tls_allowed_versions"] = [
+                TLS_VERSIONS_FROM_STR[version] for version in
+                network_config["tls_allowed_versions"]
+                ]
         except KeyError:
             # This network's config doesn't have a "tls_allowed_versions" list.
             # Nothing to do here.
@@ -84,7 +89,10 @@ def load(filename):
 
 def _dump(filename, config):
     try:
-        config["network_defaults"]["tls_allowed_versions"] = [TLS_VERSIONS_TO_STR[version] for version in config["network_defaults"]["tls_allowed_versions"]]
+        config["network_defaults"]["tls_allowed_versions"] = [
+            TLS_VERSIONS_TO_STR[version] for version in
+            config["network_defaults"]["tls_allowed_versions"]
+            ]
     except KeyError:
         # The network defaults config doesn't have a "tls_allowed_versions" list.
         # Nothing to do here.
@@ -93,7 +101,10 @@ def _dump(filename, config):
     # we'll just get an empty dict and iterate over it.
     for network_config in config.get("networks", {}).values():
         try:
-            network_config["tls_allowed_versions"] = [TLS_VERSIONS_TO_STR[version] for version in network_config["tls_allowed_versions"]]
+            network_config["tls_allowed_versions"] = [
+                TLS_VERSIONS_TO_STR[version] for version in
+                network_config["tls_allowed_versions"]
+                ]
         except KeyError:
             # This network's config doesn't have a "tls_allowed_versions" list.
             # Nothing to do here.
@@ -104,14 +115,14 @@ def _dump(filename, config):
     except FileNotFoundError:
         parent_dir = os.path.dirname(os.path.normpath(filename))
         try:
-            makedirs(parent_dir, exist_ok=True)
+            os.makedirs(parent_dir, exist_ok=True)
         except OSError as exception:
             if exception.errno == errno.EEXIST and os.path.isdir(parent_dir):
                 return _dump(filename, config)
             else:
                 raise
 
-def dump(filename):
+def dump(filename, config=None):
     if config is None:
         # Don't modify the instance of the config everything else is using.
         with current_lock:
@@ -119,5 +130,4 @@ def dump(filename):
     return _dump(filename, config)
 
 current = {}
-# TODO: This should really be a shared lock, yes?
 current_lock = threading.RLock()

@@ -8,13 +8,13 @@ import ssl
 import threading
 
 import lunabot.config
-from lunabot.handler import Handler, HandlerManager
+from lunabot.handler import HandlerManager
 from lunabot.line import Line
 
 global_handlers = HandlerManager()
 
 class Connection(threading.Thread):
-    def __init__(self, name, config, config_lock, global_handlers):
+    def __init__(self, name, config, config_lock):
         super().__init__()
         self.name = name
         self.config = ChainMap(
@@ -26,10 +26,9 @@ class Connection(threading.Thread):
         self.socket = None
         self.tls_context = None
         self.handlers = HandlerManager()
-        # TODO: maybe this should be a `status` attribute?
         self.connected = False
         with self.config_lock:
-            self.remaining_tls_versions = iter(self.config["tls_allowed_versions"])
+            self.remaining_tls_versions = iter(self.config["tls_allowed_versions"].copy())
 
     def _create_tls_context(self):
         try:
@@ -38,17 +37,22 @@ class Connection(threading.Thread):
             try:
                 tls_version = next(self.remaining_tls_versions)
             except StopIteration:
-                # TODO: log that we've exhausted the allowed TLS versions
                 raise
         with self.config_lock:
             tls_verify = self.config["tls_verify"]
             allowed_hostnames = self.config["tls_allowed_hostnames"]
-            tls_cas = self.config["tls_ca_path"] and os.path.join(lunabot.config.dir, self.config["tls_ca_path"])
-            tls_cert_name = self.config["tls_cert"] and os.path.join(lunabot.config.dir, self.config["tls_cert"])
+            tls_cas = (
+                self.config["tls_ca_path"] and
+                os.path.join(lunabot.config.dir, self.config["tls_ca_path"])
+                )
+            tls_cert_name = (
+                self.config["tls_cert"] and
+                os.path.join(lunabot.config.dir, self.config["tls_cert"])
+                )
             tls_ciphers = self.config["tls_ciphers"]
         context = ssl.SSLContext(tls_version)
         if tls_cert_name:
-            context.load_cert_chain(tls_cert_name)  # TODO: what if the cert is password-protected?
+            context.load_cert_chain(tls_cert_name)
         if tls_cas:
             if os.path.isdir(tls_cas):
                 context.load_verify_locations(capath=tls_cas)
@@ -69,20 +73,16 @@ class Connection(threading.Thread):
             tls_verify = self.config["tls_verify"]
             allowed_hostnames = self.config["tls_allowed_hostnames"]
         addr_info_list = []
-        # TODO: make IP version preference a config option
-        # TODO: detect when IPv4 or IPv6 connectivity is broken and fall back to the other one
         for family in (socket.AF_INET6, socket.AF_INET):
             try:
                 addr_info_list.extend(socket.getaddrinfo(
                     host, port, family=family, type=socket.SOCK_STREAM))
-            except:
+            except Exception:
                 pass
-                # TODO: handle exception properly
             if addr_info_list:
                 break
         else:
             pass
-            # TODO: none of the getaddrinfo()s returned anything. Handle this case.
         family, _, _, _, addr = addr_info_list[0]
         self.socket = socket.socket(family)
         if tls:
@@ -95,11 +95,9 @@ class Connection(threading.Thread):
         except ssl.SSLError as exception:
             if not exception.reason == "WRONG_VERSION_NUMBER":
                 raise
-            # TODO: log that we're trying the next allowed TLS version
             try:
                 tls_version = next(self.remaining_tls_versions)
             except StopIteration:
-                # TODO: log that we've exhausted the allowed TLS versions
                 raise
             else:
                 return self.connect()
@@ -114,11 +112,10 @@ class Connection(threading.Thread):
                     break
             else:
                 self.disconnect()
-                # TODO: tell the user verification failed
         self.connected = True
 
     def disconnect(self):
-        self.socket.shutdown(socket.RDWR)
+        self.socket.shutdown(socket.SHUT_RDWR)
         self.socket.close()
         self.socket = None
         self.handlers.clear()
@@ -152,8 +149,6 @@ class Connection(threading.Thread):
 
     def run(self):
         self.connect()
-        # TODO: need to load all those plugins
-        # TODO: what about `CAP`s?
         with self.config_lock:
             nicks = self.config["nicks"]
             username = self.config["username"]
