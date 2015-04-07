@@ -1,5 +1,9 @@
-from itertools import chain
+from collections import defaultdict
+import collections.abc
+from functools import partial
 from operator import attrgetter
+
+from lunabot.sortedlist import SortedList
 
 class Handler:
     def __init__(self, event, priority, callback):
@@ -15,51 +19,60 @@ class Handler:
     def __str__(self):
         return repr(self)
 
-class HandlerManager:
+class HandlerManager(collections.abc.MutableSet):
     def __init__(self, *handlers):
-        self.handler_lists = {}
-        self.add(*handlers)
+        self._handlers = defaultdict(partial(SortedList, key=attrgetter("priority")))
+        self._len = 0
+        for handler in handlers:
+            self.add(handler)
 
     def __repr__(self):
-        return repr(list(chain(*self.handler_lists.values())))
+        return '{}(*{})'.format(type(self).__name__, repr(
+            [handler for list_ in self._handlers.values() for handler in list_]))
 
     def __str__(self):
-        # Not repr(self) because we want `object`s representation.
-        return object.__repr__(self)
+        return '{} with {} handlers spanning {} events'.format(
+            type(self).__name__, len(self), len(self._handlers),
+            )
 
     def __len__(self):
-        return sum(len(handler_list) for handler_list in self.handler_lists)
+        return self._len
 
     def __iter__(self):
-        return chain(*self.handler_lists.values())
+        for list_ in self._handlers.values():
+            for handler in list_:
+                yield handler
 
-    def add(self, *handlers):
-        changed_events = set()
-        for handler in handlers:
-            changed_events.add(handler.event)
-            try:
-                self.handler_lists[handler.event].append(handler)
-            except KeyError:
-                self.handler_lists[handler.event] = [handler]
-        for event in changed_events:
-            self.handler_lists[event].sort(key=attrgetter("priority"))
+    def __contains__(self, item):
+        return any(item in list_ for list_ in self._handlers.values())
 
-    def remove(self, *handlers):
-        for handler in handlers:
-            try:
-                self.handler_lists[handler.event].remove(handler)
-            except (KeyError, ValueError):
-                # The Handler wasn't in the list, or there were no Handlers
-                # for that event. That's perfectly fine.
-                pass
-            if not self.handler_lists[handler.event]:
-                del self.handler_lists[handler.event]
+    def add(self, handler):
+        self._len += 1
+        self._handlers[handler.event].append(handler)
+
+    def remove(self, handler):
+        try:
+            self._handlers[handler.event].remove(handler)
+        except ValueError:
+            raise ValueError(
+                "{} is not in {}".format(
+                    repr(handler), type(self).__name__,
+                    ),
+                )
+        else:
+            self._len += 1
+        if not self._handlers[handler.event]:
+            del self._handlers[handler.event]
+
+    def discard(self, handler):
+        try:
+            self.remove(handler)
+        except ValueError:
+            pass
 
     def clear(self):
-        self.handler_lists.clear()
-
-    def __getitem__(self, key):
-        return self.handler_lists.get(key, [])
+        self._handlers.clear()
+        self._len = 0
 
 # TODO: Enum for event priorities or something?
 UNKNOWN_PRIORITY = -1
