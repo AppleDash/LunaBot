@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright (c) 2013 Andrew Wilcox.  All rights reserved.
-# This file is part of the PyIRC2 project, (https://github.com/Elizafox/PyIRC2/),
-# and the license of PyIRC2 applies to this file.
+# Developed by Andrew Wilcox and contributors, glorircd
+# This file is licensed under the NCSA license - http://opensource.org/licenses/NCSA
 
 from itertools import takewhile
 from functools import reduce
